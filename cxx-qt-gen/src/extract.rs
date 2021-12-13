@@ -23,6 +23,7 @@ pub(crate) struct CppRustIdent {
 #[derive(Debug, PartialEq)]
 pub enum QtTypes {
     Bool,
+    CppObj,
     F32,
     F64,
     I8,
@@ -179,6 +180,7 @@ fn extract_qt_type(
         // We can assume that idents has an entry at index zero, because there is one entry
         match idents[0].to_string().as_str() {
             "bool" => Ok(QtTypes::Bool),
+            "CppObj" => Ok(QtTypes::CppObj),
             "f32" => Ok(QtTypes::F32),
             "f64" => Ok(QtTypes::F64),
             "i8" => Ok(QtTypes::I8),
