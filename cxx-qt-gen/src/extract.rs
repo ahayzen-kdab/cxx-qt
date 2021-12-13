@@ -1204,23 +1204,10 @@ mod tests {
         let param_first = &invokable.parameters[0];
         assert_eq!(param_first.ident.to_string(), "_cpp");
         assert_eq!(param_first.type_ident.idents.len(), 1);
-        assert_eq!(param_first.type_ident.idents[0].to_string(), "Pin");
-        assert_eq!(param_first.type_ident.is_ref, false);
-        if let QtTypes::Pin {
-            ident_namespace_str,
-            is_mut,
-            is_this,
-            type_idents,
-        } = &param_first.type_ident.qt_type
-        {
-            assert_eq!(ident_namespace_str, "FFICppObj");
-            assert_eq!(is_mut, &true);
-            assert_eq!(is_this, &true);
-            assert_eq!(type_idents.len(), 1);
-            assert_eq!(type_idents[0].to_string(), "FFICppObj");
-        } else {
-            panic!();
-        }
+        assert_eq!(param_first.type_ident.idents[0].to_string(), "FFICppObj");
+        assert_eq!(param_first.type_ident.is_ref, true);
+        assert_eq!(param_first.type_ident.is_mut, true);
+        assert_eq!(param_first.type_ident.qt_type, QtTypes::CppObj);
 
         let param_second = &invokable.parameters[1];
         assert_eq!(param_second.ident.to_string(), "string");
@@ -1246,23 +1233,10 @@ mod tests {
         let param_first = &invokable_second.parameters[0];
         assert_eq!(param_first.ident.to_string(), "_cpp");
         assert_eq!(param_first.type_ident.idents.len(), 1);
-        assert_eq!(param_first.type_ident.idents[0].to_string(), "Pin");
-        assert_eq!(param_first.type_ident.is_ref, false);
-        if let QtTypes::Pin {
-            ident_namespace_str,
-            is_mut,
-            is_this,
-            type_idents,
-        } = &param_first.type_ident.qt_type
-        {
-            assert_eq!(ident_namespace_str, "FFICppObj");
-            assert_eq!(is_mut, &true);
-            assert_eq!(is_this, &true);
-            assert_eq!(type_idents.len(), 1);
-            assert_eq!(type_idents[0].to_string(), "FFICppObj");
-        } else {
-            panic!();
-        }
+        assert_eq!(param_first.type_ident.idents[0].to_string(), "FFICppObj");
+        assert_eq!(param_first.type_ident.is_ref, true);
+        assert_eq!(param_first.type_ident.is_mut, true);
+        assert_eq!(param_first.type_ident.qt_type, QtTypes::CppObj);
     }
 
     #[test]
@@ -1283,6 +1257,65 @@ mod tests {
         // Check that it got the invokables
         assert_eq!(qobject.invokables.len(), 0);
         assert_eq!(qobject.normal_methods.len(), 2);
+    }
+
+    #[test]
+    fn parses_subobject_pin_invokable() {
+        // TODO: we probably want to parse all the test case files we have
+        // only once as to not slow down different tests on the same input.
+        // This can maybe be done with some kind of static object somewhere.
+        let source = include_str!("../test_inputs/subobject_pin_invokable.rs");
+        let module: ItemMod = syn::parse_str(source).unwrap();
+        let cpp_namespace_prefix = vec!["cxx_qt"];
+        let qobject = extract_qobject(module, &cpp_namespace_prefix).unwrap();
+
+        // Check that it got the names right
+        assert_eq!(qobject.ident.to_string(), "MyObject");
+        assert_eq!(qobject.original_mod.ident.to_string(), "my_object");
+        assert_eq!(qobject.original_rust_struct.ident.to_string(), "RustObj");
+
+        // Check that it got the invokables
+        assert_eq!(qobject.invokables.len(), 1);
+
+        // Check invokable ident
+        let invokable = &qobject.invokables[0];
+        assert_eq!(invokable.ident.cpp_ident.to_string(), "subTest");
+        assert_eq!(invokable.ident.rust_ident.to_string(), "sub_test");
+
+        // Check invokable parameters ident and type ident
+        assert_eq!(invokable.parameters.len(), 2);
+
+        let param_first = &invokable.parameters[0];
+        assert_eq!(param_first.ident.to_string(), "_cpp");
+        assert_eq!(param_first.type_ident.idents.len(), 1);
+        assert_eq!(param_first.type_ident.idents[0].to_string(), "CppObj");
+        assert_eq!(param_first.type_ident.is_ref, true);
+        assert_eq!(param_first.type_ident.is_mut, true);
+        assert_eq!(param_first.type_ident.qt_type, QtTypes::CppObj);
+
+        let param_second = &invokable.parameters[1];
+        assert_eq!(param_second.ident.to_string(), "sub");
+        // TODO: add extra checks when we read if this is a mut or not
+        assert_eq!(param_second.type_ident.idents.len(), 1);
+        assert_eq!(param_second.type_ident.idents[0].to_string(), "Pin");
+        assert_eq!(param_second.type_ident.is_ref, false);
+        if let QtTypes::Pin {
+            ident_namespace_str,
+            is_mut,
+            is_this,
+            type_idents,
+        } = &param_second.type_ident.qt_type
+        {
+            assert_eq!(ident_namespace_str, "cxx_qt::sub_object::SubObject");
+            assert_eq!(is_mut, &true);
+            assert_eq!(is_this, &false);
+            assert_eq!(type_idents.len(), 3);
+            assert_eq!(type_idents[0].to_string(), "crate");
+            assert_eq!(type_idents[1].to_string(), "sub_object");
+            assert_eq!(type_idents[2].to_string(), "SubObject");
+        } else {
+            panic!();
+        }
     }
 
     #[test]

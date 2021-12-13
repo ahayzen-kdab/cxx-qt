@@ -46,8 +46,8 @@ mod my_object {
     impl RustObj {
         fn sub_test(
             &self,
-            _cpp: std::pin::Pin<&mut FFICppObj>,
-            sub: std::pin::Pin<&mut crate::sub_object::FFICppObj>,
+            _cpp: std::pin::Pin<&mut super::my_object::CppObj>,
+            sub: std::pin::Pin<&mut crate::sub_object::CppObj>,
         ) {
             println!("Bye from Rust!");
         }

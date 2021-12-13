@@ -9,7 +9,7 @@ mod my_object {
     struct RustObj;
 
     impl PropertyChangeHandler<FFICppObj, Property> for RustObj {
-        fn handle_property_change(&mut self, _cpp: Pin<&mut FFICppObj>, _property: Property) {
+        fn handle_property_change(&mut self, _cpp: Cpp<&mut my_object>, _property: Property) {
             println!("change")
         }
     }
