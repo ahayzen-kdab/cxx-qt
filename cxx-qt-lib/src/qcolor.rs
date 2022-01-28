@@ -8,47 +8,41 @@
 #![allow(improper_ctypes)]
 
 use crate::actually_private::Private;
-use cxx::{type_id, ExternType};
+use cxx::{memory::UniquePtrTarget, type_id, ExternType};
 use std::{
     ffi::c_void,
     marker::{PhantomData, PhantomPinned},
-    mem::{self, ManuallyDrop, MaybeUninit},
-    ops::{Deref, DerefMut},
+    mem::MaybeUninit,
     pin::Pin,
 };
 
-#[repr(u8)]
-#[allow(dead_code)]
-enum QColorSpec {
-    Unsupported = 0,
-    Rgb = 1,
-}
-
 extern "C" {
-    #[link_name = "cxxqt1$qcolor$init"]
-    fn qcolor_init(this: &mut MaybeUninit<QColor>);
-    #[link_name = "cxxqt1$qcolor$init$from$argb"]
-    fn qcolor_init_from_argb(
-        this: &mut MaybeUninit<QColor>,
-        alpha: u16,
-        red: u16,
-        green: u16,
-        blue: u16,
+    #[link_name = "cxxqt1$qcolor$init$from$qcolor"]
+    fn qcolor_init_from_qcolor(ptr: &mut MaybeUninit<cxx::UniquePtr<QColor>>, qcolor: &QColor);
+    #[link_name = "cxxqt1$qcolor$init$from$rgba"]
+    fn qcolor_init_from_rgba(
+        ptr: &mut MaybeUninit<cxx::UniquePtr<QColor>>,
+        red: i32,
+        green: i32,
+        blue: i32,
+        alpha: i32,
     );
     #[link_name = "cxxqt1$qcolor$get$alpha"]
-    fn qcolor_get_alpha(this: &QColor) -> u16;
+    fn qcolor_get_alpha(this: &QColor) -> i32;
     #[link_name = "cxxqt1$qcolor$get$red"]
-    fn qcolor_get_red(this: &QColor) -> u16;
+    fn qcolor_get_red(this: &QColor) -> i32;
     #[link_name = "cxxqt1$qcolor$get$green"]
-    fn qcolor_get_green(this: &QColor) -> u16;
+    fn qcolor_get_green(this: &QColor) -> i32;
     #[link_name = "cxxqt1$qcolor$get$blue"]
-    fn qcolor_get_blue(this: &QColor) -> u16;
-    #[link_name = "cxxqt1$qcolor$get$spec"]
-    fn qcolor_get_spec(this: &QColor) -> QColorSpec;
-    #[link_name = "cxxqt1$qcolor$assign$qcolor"]
-    fn qcolor_assign_qcolor(from: &QColor, to: &mut QColor);
-    #[link_name = "cxxqt1$qcolor$drop"]
-    fn qcolor_drop(this: &mut MaybeUninit<QColor>);
+    fn qcolor_get_blue(this: &QColor) -> i32;
+    #[link_name = "cxxqt1$qcolor$set$alpha"]
+    fn qcolor_set_alpha(this: Pin<&mut QColor>, alpha: i32);
+    #[link_name = "cxxqt1$qcolor$set$red"]
+    fn qcolor_set_red(this: Pin<&mut QColor>, red: i32);
+    #[link_name = "cxxqt1$qcolor$set$green"]
+    fn qcolor_set_green(this: Pin<&mut QColor>, green: i32);
+    #[link_name = "cxxqt1$qcolor$set$blue"]
+    fn qcolor_set_blue(this: Pin<&mut QColor>, blue: i32);
 }
 
 /// Binding to Qt `QColor`.
@@ -66,51 +60,6 @@ pub struct QColor {
     _pinned: PhantomData<PhantomPinned>,
 }
 
-// TODO: figure out how to make Syntax and Example compile as code
-// and then change ```ignore back to ```
-
-/// Construct a QColor on the Rust stack.
-///
-/// # Syntax
-///
-/// In statement position:
-///
-/// ```ignore
-/// # use cxx_qt_lib::{let_qcolor, Color};
-/// # let expression = Color::ARGB { alpha: 0, red: 255, green: 0, blue: 0 });
-/// let_qcolor!(var = expression);
-/// ```
-///
-///
-/// The `expression` must refer to a `&cxx_qt_lib::Color`.
-///
-/// The macro expands to something resembling `let $var: Pin<&mut QColor> =
-/// /*???*/;`. The resulting [`Pin`] can be deref'd to `&QColor` as needed.
-///
-/// # Example
-///
-/// ```ignore
-/// use cxx_qt_lib::{let_qcolor, QColor};
-///
-///
-/// fn f(s: &QColor) {/* ... */}
-///
-/// fn main() {
-///     let_qcolor!(s = "example");
-///     f(&s);
-/// }
-/// ```
-#[macro_export]
-macro_rules! let_qcolor {
-    ($var:ident = $value:expr $(,)?) => {
-        let mut stack_qcolor = $crate::private::StackQColor::new();
-        #[allow(unused_mut, unused_unsafe)]
-        let mut $var = match $value {
-            let_qcolor => unsafe { stack_qcolor.init(let_qcolor) },
-        };
-    };
-}
-
 impl QColor {
     /// `QColor` is not constructible via `new`.
     /// Instead, use the [`let_qcolor!`] macro.
@@ -121,75 +70,7 @@ impl QColor {
     /// Create a new Rust Color from this QColor.
     /// This is a copy operation so any changes will not propagate to the original QColor.
     pub fn to_rust(&self) -> Color {
-        // Given that a QColor can only be constructed using [`let_qcolor!`] macro,
-        // it is safe to assume that self is a valid QColor reference which makes these
-        // function calls safe.
-        match unsafe { qcolor_get_spec(self) } {
-            QColorSpec::Unsupported => Color::unsupported(),
-            QColorSpec::Rgb => Color::from_argb(
-                unsafe { qcolor_get_alpha(self) },
-                unsafe { qcolor_get_red(self) },
-                unsafe { qcolor_get_green(self) },
-                unsafe { qcolor_get_blue(self) },
-            ),
-        }
-    }
-}
-
-#[doc(hidden)]
-#[repr(C)]
-pub struct StackQColor {
-    // Static assertions in cxx_qt.cpp validate that this
-    // is large enough and aligned enough.
-    space: MaybeUninit<[usize; 2]>,
-}
-
-#[allow(missing_docs)]
-impl StackQColor {
-    pub fn new() -> Self {
-        StackQColor {
-            space: MaybeUninit::uninit(),
-        }
-    }
-
-    /// # Safety
-    ///
-    /// Calling this function twice on the same StackQColor is unsafe
-    /// and leads to undefined behaviour. It is therefore recommended
-    /// to not use this function directly and instead use the [`let_qcolor!`]
-    /// macro which ensures that safe behaviour.
-    pub unsafe fn init(&mut self, value: &Color) -> Pin<&mut QColor> {
-        let this = &mut *self.space.as_mut_ptr().cast::<MaybeUninit<QColor>>();
-        match value.deref() {
-            ColorImpl::ARGB {
-                alpha,
-                red,
-                green,
-                blue,
-            } => qcolor_init_from_argb(this, *alpha, *red, *green, *blue),
-            ColorImpl::Unsupported => qcolor_init(this),
-        }
-        Pin::new_unchecked(&mut *this.as_mut_ptr())
-    }
-}
-
-impl Default for StackQColor {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Drop for StackQColor {
-    fn drop(&mut self) {
-        // # Safety
-        //
-        // This simply calls ~QColor on self.space which is safe as long
-        // as self.space contains a valid QColor. Using the [`let_qcolor!`]
-        // macro guarantees that this will be the case.
-        unsafe {
-            let this = &mut *self.space.as_mut_ptr().cast::<MaybeUninit<QColor>>();
-            qcolor_drop(this);
-        }
+        Color::from_qcolor(self)
     }
 }
 
@@ -203,83 +84,134 @@ unsafe impl ExternType for QColor {
     type Kind = cxx::kind::Opaque;
 }
 
-pub enum ColorImpl {
-    Unsupported,
-    ARGB {
-        alpha: u16,
-        red: u16,
-        green: u16,
-        blue: u16,
-    },
-}
-
-#[repr(C)]
 pub struct Color {
-    pub d: Box<ColorImpl>,
+    pub inner: cxx::UniquePtr<QColor>,
 }
 
 impl Color {
-    pub fn from_argb(alpha: u16, red: u16, green: u16, blue: u16) -> Self {
+    pub fn from_qcolor(qcolor: &QColor) -> Self {
         Self {
-            d: Box::new(ColorImpl::ARGB {
-                alpha,
-                red,
-                green,
-                blue,
-            }),
+            inner: unsafe {
+                let mut ptr = MaybeUninit::<cxx::UniquePtr<QColor>>::zeroed();
+                qcolor_init_from_qcolor(&mut ptr, qcolor);
+                ptr.assume_init()
+            },
         }
     }
 
-    pub fn unsupported() -> Self {
+    pub fn from_rgba(red: i32, green: i32, blue: i32, alpha: i32) -> Self {
         Self {
-            d: Box::new(ColorImpl::Unsupported),
+            inner: unsafe {
+                let mut ptr = MaybeUninit::<cxx::UniquePtr<QColor>>::zeroed();
+                qcolor_init_from_rgba(&mut ptr, red, green, blue, alpha);
+                ptr.assume_init()
+            },
         }
     }
-}
 
-impl Deref for Color {
-    type Target = ColorImpl;
+    pub fn alpha(&self) -> i32 {
+        unsafe { qcolor_get_alpha(&self.inner) }
+    }
 
-    fn deref(&self) -> &Self::Target {
-        &self.d
+    pub fn blue(&self) -> i32 {
+        unsafe { qcolor_get_blue(&self.inner) }
+    }
+
+    pub fn green(&self) -> i32 {
+        unsafe { qcolor_get_green(&self.inner) }
+    }
+
+    pub fn red(&self) -> i32 {
+        unsafe { qcolor_get_red(&self.inner) }
+    }
+
+    pub fn set_alpha(&mut self, alpha: i32) {
+        unsafe {
+            qcolor_set_alpha(self.inner.pin_mut(), alpha);
+        }
+    }
+
+    pub fn set_blue(&mut self, blue: i32) {
+        unsafe {
+            qcolor_set_blue(self.inner.pin_mut(), blue);
+        }
+    }
+
+    pub fn set_green(&mut self, green: i32) {
+        unsafe {
+            qcolor_set_green(self.inner.pin_mut(), green);
+        }
+    }
+
+    pub fn set_red(&mut self, red: i32) {
+        unsafe {
+            qcolor_set_red(self.inner.pin_mut(), red);
+        }
+    }
+
+    pub fn to_unique_ptr(self) -> cxx::UniquePtr<QColor> {
+        self.inner
     }
 }
 
-impl DerefMut for Color {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.d
-    }
-}
-
-const_assert_eq!(mem::size_of::<Color>(), mem::size_of::<*mut c_void>());
-const_assert_eq!(mem::align_of::<Color>(), mem::align_of::<*mut c_void>());
-
-// Safety
-//
-// By implementing Color through the "pimpl" idiom we ensure
-// that is equivalent to void* in C++ and thus 100% trivial.
-// We also have static asserts to ensure that this remains true.
 unsafe impl ExternType for Color {
     type Id = type_id!("CxxQt::Color");
-    type Kind = cxx::kind::Trivial;
-}
-
-#[export_name = "cxxqt1$assign$color$to$qcolor"]
-pub unsafe extern "C" fn assign_color_to_qcolor(rust: &Color, cpp: &mut QColor) {
-    // TODO: this could probably be optimised by having dedicated functions to assign to cpp directly
-    // rather than to first create a new QColor. The best would be to change the init... functions
-    // to assign... and then have a single init function to create an empty QColor.
-    let_qcolor!(q = rust);
-    qcolor_assign_qcolor(&q, cpp);
-}
-
-#[export_name = "cxxqt1$drop$color"]
-pub unsafe extern "C" fn drop_color(this: &mut ManuallyDrop<Color>) {
-    ManuallyDrop::drop(this);
+    type Kind = cxx::kind::Opaque;
 }
 
 impl From<&QColor> for Color {
     fn from(qcolor: &QColor) -> Self {
         qcolor.to_rust()
+    }
+}
+
+extern "C" {
+    #[link_name = "cxxqt1$unique_ptr$qcolor$null"]
+    fn unique_ptr_qcolor_null(this: *mut MaybeUninit<*mut c_void>);
+    #[link_name = "cxxqt1$unique_ptr$qcolor$raw"]
+    fn unique_ptr_qcolor_raw(this: *mut MaybeUninit<*mut c_void>, raw: *mut QColor);
+    #[link_name = "cxxqt1$unique_ptr$qcolor$get"]
+    fn unique_ptr_qcolor_get(this: *const MaybeUninit<*mut c_void>) -> *const QColor;
+    #[link_name = "cxxqt1$unique_ptr$qcolor$release"]
+    fn unique_ptr_qcolor_release(this: *mut MaybeUninit<*mut c_void>) -> *mut QColor;
+    #[link_name = "cxxqt1$unique_ptr$qcolor$drop"]
+    fn unique_ptr_qcolor_drop(this: *mut MaybeUninit<*mut c_void>);
+}
+
+unsafe impl UniquePtrTarget for QColor {
+    #[doc(hidden)]
+    fn __typename(f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str("QColor")
+    }
+
+    #[doc(hidden)]
+    fn __null() -> MaybeUninit<*mut c_void> {
+        let mut repr = MaybeUninit::uninit();
+        unsafe {
+            unique_ptr_qcolor_null(&mut repr);
+        }
+        repr
+    }
+
+    #[doc(hidden)]
+    unsafe fn __raw(raw: *mut Self) -> MaybeUninit<*mut c_void> {
+        let mut repr = MaybeUninit::uninit();
+        unique_ptr_qcolor_raw(&mut repr, raw);
+        repr
+    }
+
+    #[doc(hidden)]
+    unsafe fn __get(repr: MaybeUninit<*mut c_void>) -> *const Self {
+        unique_ptr_qcolor_get(&repr)
+    }
+
+    #[doc(hidden)]
+    unsafe fn __release(mut repr: MaybeUninit<*mut c_void>) -> *mut Self {
+        unique_ptr_qcolor_release(&mut repr)
+    }
+
+    #[doc(hidden)]
+    unsafe fn __drop(mut repr: MaybeUninit<*mut c_void>) {
+        unique_ptr_qcolor_drop(&mut repr)
     }
 }
