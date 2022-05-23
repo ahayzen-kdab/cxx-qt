@@ -19,6 +19,10 @@ Window {
     EnergyUsage {
         id: energyUsage
 
+        onAverageUseChanged: console.warn("qml average use changed")
+        onSensorsChanged: console.warn("qml sensors changed")
+        onTotalUseChanged: console.warn("qml total use changed")
+
         // FIXME: have the ability to HandleInit so we can start the server
         // https://github.com/KDAB/cxx-qt/issues/13
         Component.onCompleted: startServer()
@@ -87,6 +91,25 @@ Window {
 
         Item {
             Layout.fillHeight: true
+        }
+    }
+
+    Rectangle {
+        color: "red"
+        height: 50
+        width: 50
+        x: 100
+        y: 100
+
+        Timer {
+            interval: 16
+            running: true
+            repeat: true
+
+            onTriggered: {
+                parent.rotation += 1;
+                console.warn("QML value: ", energyUsage.averageUse, " ", energyUsage.readAverageUse())
+            }
         }
     }
 }

@@ -143,8 +143,9 @@ mod energy_usage {
 
     impl Default for Data {
         fn default() -> Self {
+            println!("Loading default values");
             Self {
-                average_use: 0.0,
+                average_use: 100.0,
                 sensors: 0,
                 total_use: 0.0,
             }
@@ -169,29 +170,46 @@ mod energy_usage {
     }
 
     impl RustObj {
+        // can we have &CppObj
+        #[invokable]
+        fn read_average_use(&self, cpp: &mut CppObj) -> f64
+        {
+            cpp.average_use()
+        }
+
         /// Read from a TCP stream and create a Request
         async fn build_request(stream: &mut TcpStream) -> Result<Request, Status> {
+            println!("building request from stream");
             let mut buf = vec![0u8; 128];
             if let Ok(size) = stream.read(&mut buf).await {
+                println!("read request");
+
                 if size > buf.len() {
+                    println!("incorrect size of reqeust");
                     Err(Status::ErrorInvalidReadSize)
                 } else {
+                    println!("correct size of reqeust, building from serde");
                     let trimmed = std::str::from_utf8(&buf)?
                         .trim_matches(|c| c == ' ' || c == '\n' || c == '\r' || c == '\0');
                     serde_json::from_str::<Request>(trimmed).map_err(|e| e.into())
                 }
             } else {
+                println!("failed to read request");
                 Err(Status::ErrorFailedToRead)
             }
         }
 
         async fn handle_connection(mut stream: TcpStream, network_tx: SyncSender<NetworkChannel>) {
+            println!("Handling connection...");
             let response: Response = match RustObj::build_request(&mut stream).await {
                 Ok(request) => {
+                    println!("Valid request");
                     match request.command {
                         RequestCommand::Power { value } => {
+                            println!("Power request");
                             // Validate that our power is within the expected range
                             if (0.0..=super::SENSOR_MAXIMUM_POWER).contains(&value) {
+                                println!("Sending valid power entry");
                                 network_tx
                                     .try_send(NetworkChannel::Power {
                                         uuid: request.uuid,
@@ -202,13 +220,18 @@ mod energy_usage {
                                 Status::ErrorInvalidPower.into()
                             }
                         }
-                        RequestCommand::Disconnect => network_tx
-                            .try_send(NetworkChannel::Disconnect { uuid: request.uuid })
-                            .into(),
+                        RequestCommand::Disconnect => {
+                            println!("disconnect request");
+                            network_tx
+                                .try_send(NetworkChannel::Disconnect { uuid: request.uuid })
+                                .into()
+                        }
                     }
                 }
                 Err(err) => err.into(),
             };
+
+            println!("Writing response to request");
 
             stream
                 .write(serde_json::to_string(&response).unwrap().as_bytes())
@@ -224,6 +247,8 @@ mod energy_usage {
                 return;
             }
 
+            println!("starting server");
+
             let (network_tx, network_rx) = sync_channel(super::CHANNEL_NETWORK_COUNT);
             let (timeout_tx, timeout_rx) = sync_channel::<HashMap<Uuid, SensorData>>(0);
             let (update_tx, update_rx) = sync_channel::<HashMap<Uuid, SensorData>>(0);
@@ -233,6 +258,7 @@ mod energy_usage {
             let timeout_network_tx = network_tx.clone();
             let run_timeout = async move {
                 loop {
+                    // println!("timeout loop");
                     Delay::new(super::SENSOR_TIMEOUT_POLL_RATE).await;
 
                     timeout_network_tx
@@ -240,6 +266,7 @@ mod energy_usage {
                         .unwrap();
 
                     if let Ok(mut sensors) = timeout_rx.recv() {
+                        // println!("checking sensors");
                         for uuid in sensors
                             .drain()
                             // Find sensors that have expired
@@ -252,6 +279,7 @@ mod energy_usage {
                             })
                             .map(|(uuid, _)| uuid)
                         {
+                            println!("found timeout sensor removing");
                             timeout_network_tx
                                 .send(NetworkChannel::Disconnect { uuid })
                                 .unwrap();
@@ -271,14 +299,17 @@ mod energy_usage {
                 loop {
                     Delay::new(super::SENSOR_UPDATE_POLL_RATE).await;
 
+                    // println!("checking sensors changed");
                     if update_sensors_changed
                         .compare_exchange_weak(true, false, Ordering::SeqCst, Ordering::SeqCst)
                         .is_ok()
                     {
+                        println!("change in sensors, requesting snapshot");
                         update_network_tx.send(NetworkChannel::Update).unwrap();
 
                         // If there is new sensor info then build average, count, total and inform Qt
                         if let Ok(sensors) = update_rx.recv() {
+                            println!("update building totals");
                             let total_use = sensors.values().fold(0.0, |acc, x| acc + x.power);
                             let sensors = sensors.len() as u32;
                             let average_use = if sensors > 0 {
@@ -287,6 +318,7 @@ mod energy_usage {
                                 0.0
                             };
 
+                            println!("sending to Qt");
                             qt_tx
                                 .send(Data {
                                     average_use,
@@ -295,8 +327,11 @@ mod energy_usage {
                                 })
                                 .unwrap();
 
+                            println!("requesting update to Qt");
                             update_requester.request_update();
                         }
+                    } else {
+                        // println!("no changed in sensors")
                     }
                 }
             };
@@ -313,10 +348,12 @@ mod energy_usage {
                     if let Ok(command) = network_rx.recv() {
                         match command {
                             NetworkChannel::Disconnect { uuid } => {
+                                println!("disconnect command");
                                 sensors.remove(&uuid);
                                 sensors_changed.store(true, Ordering::SeqCst);
                             }
                             NetworkChannel::Power { uuid, value } => {
+                                println!("power command");
                                 // Validate that we would still be below the sensors max count
                                 let sensors_len = sensors.len();
                                 let entry = sensors.entry(uuid);
@@ -326,6 +363,7 @@ mod energy_usage {
                                         std::collections::hash_map::Entry::Occupied(..)
                                     )
                                 {
+                                    println!("entry changed");
                                     let mut sensor = entry.or_default();
                                     sensor.power = value;
                                     sensor.last_seen = SystemTime::now();
@@ -335,9 +373,11 @@ mod energy_usage {
                                 }
                             }
                             NetworkChannel::TimeoutUpdate => {
+                                // println!("sending timeout snapshot");
                                 timeout_tx.send(sensors.clone()).unwrap();
                             }
                             NetworkChannel::Update => {
+                                println!("sending update snapshot");
                                 update_tx.send(sensors.clone()).unwrap();
                             }
                         }
@@ -348,6 +388,7 @@ mod energy_usage {
             // Prepare our Tcp server which listens for sensors
             let run_server = async move {
                 let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
+                println!("running server");
                 listener
                     .incoming()
                     .map(|stream| (stream, network_tx.clone()))
@@ -365,17 +406,44 @@ mod energy_usage {
                 std::thread::spawn(move || block_on(run_sensors)),
                 std::thread::spawn(move || block_on(run_server)),
             ]);
+
+            println!("end of start server");
+        }
+    }
+
+    impl PropertyChangeHandler<CppObj<'_>, Property> for RustObj {
+        fn handle_property_change(&mut self, cpp: &mut CppObj, property: Property) {
+            match property {
+                Property::AverageUse => {
+                    println!("property changed average");
+                },
+                Property::Sensors => {
+                    println!("property sensors average");
+                },
+                Property::TotalUse => {
+                    println!("property total average");
+                },
+                _others => {},
+            }
         }
     }
 
     impl UpdateRequestHandler<CppObj<'_>> for RustObj {
         fn handle_update_request(&mut self, cpp: &mut CppObj) {
+            println!("handle update request triggered!");
             // Process the new data from the background thread
             if let Some(data) = self.qt_rx.try_iter().last() {
+                println!("found value, reading into QML: {} {} {}", data.average_use, data.sensors, data.total_use);
                 // Here we have constructed a new Data struct so can consume it's values
                 // for other uses we could have passed an Enum across the channel
                 // and then process the required action here
-                cpp.grab_values_from_data(data);
+                // cpp.grab_values_from_data(data);
+                cpp.set_average_use(data.average_use);
+                println!("set average, now setting sensors");
+                cpp.set_sensors(data.sensors);
+                println!("set sensors, now setting total");
+                cpp.set_total_use(data.total_use);
+                println!("done set total");
             }
         }
     }
