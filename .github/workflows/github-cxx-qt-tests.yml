@@ -28,6 +28,7 @@ jobs:
                 qml-module-qtquick2
                 qml-module-qtquick-controls2
                 qml-module-qttest
+            rust_target: x86_64-unknown-linux-gnu
             workspace: /home/runner/cxx-qt
           - name: Ubuntu 20.04 (gcc) Qt6
             os: ubuntu-20.04
@@ -49,6 +50,7 @@ jobs:
                 libgl1-mesa-dev
                 libvulkan-dev
                 libxkbcommon-dev
+            rust_target: x86_64-unknown-linux-gnu
             workspace: /home/runner/cxx-qt
 
           - name: macOS 11 (clang) Qt5
@@ -65,6 +67,7 @@ jobs:
             qt_qpa_platform: cocoa
             compiler_cache_path: /Users/runner/Library/Caches/Mozilla.sccache
             cargo_dir: ~/.cargo
+            rust_target: x86_64-apple-darwin
             workspace: /Users/runner/cxx-qt
           - name: macOS 11 (clang) Qt6
             os: macos-11
@@ -80,34 +83,32 @@ jobs:
             qt_qpa_platform: cocoa
             compiler_cache_path: /Users/runner/Library/Caches/Mozilla.sccache
             cargo_dir: ~/.cargo
+            rust_target: x86_64-apple-darwin
             workspace: /Users/runner/cxx-qt
 
-          - name: Windows 2022 (MSVC) Qt5
+          - name: Windows 2022 (MinGW) Qt5
             os: windows-2022
             qt_version: 5
             # FIXME: many tests fail to link
             # https://github.com/KDAB/cxx-qt/issues/111
-            ctest_args: --exclude-regex '^(cxx_qt_gen_cargo_tests|demo_threading_cargo_tests|example_qml.*|qml.*tests|test.*|reuse_lint|cpp_clang_format|.*valgrind)$'
+            ctest_args: --exclude-regex '^(cxx_qt_gen_cargo_tests|demo_threading_cargo_tests|qml.*_cargo_tests|test.*_cargo_tests|reuse_lint|cpp_clang_format|.*valgrind)$'
             exe_suffix: .exe
             qt_qpa_platform: windows
             compiler_cache_path: C:\Users\runneradmin\AppData\Local\Mozilla\sccache\cache
             cargo_dir: C:\Users\runneradmin\.cargo
-            cc: cl
-            cxx: cl
             # The D drive runs out of space when building dependencies with vcpkg.
             workspace: C:\cxx-qt
-          - name: Windows 2022 (MSVC) Qt6
+          - name: Windows 2022 (MinGW) Qt6
             os: windows-2022
             qt_version: 6
             # FIXME: many tests fail to link
             # https://github.com/KDAB/cxx-qt/issues/111
-            ctest_args: --exclude-regex '^(cxx_qt_gen_cargo_tests|demo_threading_cargo_tests|example_qml.*|qml.*tests|test.*|reuse_lint|cpp_clang_format|.*valgrind)$'
+            ctest_args: --exclude-regex '^(cxx_qt_gen_cargo_tests|demo_threading_cargo_tests|qml.*_cargo_tests|test.*_cargo_tests|reuse_lint|cpp_clang_format|.*valgrind)$'
             exe_suffix: .exe
             qt_qpa_platform: windows
             compiler_cache_path: C:\Users\runneradmin\AppData\Local\Mozilla\sccache\cache
             cargo_dir: C:\Users\runneradmin\.cargo
-            cc: cl
-            cxx: cl
+            rust_target: x86_64-pc-windows-gnu
             # The D drive runs out of space when building dependencies with vcpkg.
             workspace: C:\cxx-qt
 
@@ -127,7 +128,8 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         components: clippy, rustfmt
-        toolchain: stable
+        default: true
+        toolchain: stable-${{ matrix.rust_target }}
 
     - name: "Rust tools cache"
       uses: actions/cache@v2
@@ -186,9 +188,24 @@ jobs:
         echo "VCPKG_BINARY_SOURCES=clear;nuget,cxx-qt-github-packages,readwrite;" >> "${GITHUB_ENV}"
 
     # Required for CMake to find Ninja
-    - name: "[Windows] Set up MSVC Developer Command Prompt"
+    # - name: "[Windows] Set up MSVC Developer Command Prompt"
+    #   if: runner.os == 'Windows'
+    #   uses: seanmiddleditch/gha-setup-vsdevenv@v3
+
+    # Setup MinGW and ninja for Windows
+    - name: "[Windows] Set up MinGW Developer Command Prompt"
+      uses: msys2/setup-msys2@v2
       if: runner.os == 'Windows'
-      uses: seanmiddleditch/gha-setup-vsdevenv@v3
+      with:
+        msystem: mingw64
+        update: true
+        install: >-
+          git
+          make
+        pacboy: >-
+          toolchain:p
+          cmake:p
+          ninja:p
 
     # Ninja is required on Windows for CMAKE_CXX_COMPILER_LAUNCHER to work for using sccache.
     - name: "Configure"
@@ -201,8 +218,6 @@ jobs:
       working-directory: ${{ matrix.workspace }}
       env:
         RUSTC_WRAPPER: sccache
-        CC: ${{ matrix.cc }}
-        CXX: ${{ matrix.cxx }}
     - name: "Build"
       run: cmake --build build --config Release --parallel 2
       working-directory: ${{ matrix.workspace }}
