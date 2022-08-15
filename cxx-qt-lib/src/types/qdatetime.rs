@@ -75,9 +75,3 @@ impl QDateTime {
         ffi::qdatetime_set_time(self, time);
     }
 }
-
-impl From<&QDateTime> for cxx::UniquePtr<QDateTime> {
-    fn from(value: &QDateTime) -> cxx::UniquePtr<QDateTime> {
-        QDateTime::from_ref(value)
-    }
-}

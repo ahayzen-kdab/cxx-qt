@@ -37,7 +37,7 @@ mod ffi {
 }
 
 /// The QSizeF class defines the size of a two-dimensional object using floating point precision.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 #[repr(C)]
 pub struct QSizeF {
     w: f64,
@@ -64,12 +64,4 @@ impl Default for QSizeF {
 unsafe impl ExternType for QSizeF {
     type Id = type_id!("QSizeF");
     type Kind = cxx::kind::Trivial;
-}
-
-#[doc(hidden)]
-impl From<&QSizeF> for QSizeF {
-    // TODO: in the future remove at least the deref to a clone and potentially remove this ?
-    fn from(sizef: &QSizeF) -> Self {
-        *sizef
-    }
 }

@@ -37,7 +37,7 @@ mod ffi {
 }
 
 /// The QTime class provides clock time functions.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 #[repr(C)]
 pub struct QTime {
     mds: i32,
@@ -63,12 +63,4 @@ impl Default for QTime {
 unsafe impl ExternType for QTime {
     type Id = type_id!("QTime");
     type Kind = cxx::kind::Trivial;
-}
-
-#[doc(hidden)]
-impl From<&QTime> for QTime {
-    // TODO: in the future remove at least the deref to a clone and potentially remove this ?
-    fn from(qtime: &QTime) -> Self {
-        *qtime
-    }
 }

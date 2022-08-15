@@ -46,9 +46,3 @@ impl std::fmt::Display for QString {
         write!(f, "{}", ffi::qstring_to_rust_string(self))
     }
 }
-
-impl From<&QString> for cxx::UniquePtr<QString> {
-    fn from(value: &QString) -> cxx::UniquePtr<QString> {
-        QString::from_ref(value)
-    }
-}

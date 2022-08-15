@@ -64,9 +64,3 @@ impl QUrl {
         ffi::qurl_to_rust_string(self)
     }
 }
-
-impl From<&QUrl> for cxx::UniquePtr<QUrl> {
-    fn from(value: &QUrl) -> cxx::UniquePtr<QUrl> {
-        QUrl::from_ref(value)
-    }
-}

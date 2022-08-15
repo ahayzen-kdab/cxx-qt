@@ -63,9 +63,3 @@ impl QColor {
         ffi::qcolor_init_from_rgba(red, green, blue, alpha)
     }
 }
-
-impl From<&QColor> for cxx::UniquePtr<QColor> {
-    fn from(value: &QColor) -> cxx::UniquePtr<QColor> {
-        QColor::from_ref(value)
-    }
-}

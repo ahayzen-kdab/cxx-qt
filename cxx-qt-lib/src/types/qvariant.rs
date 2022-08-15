@@ -298,9 +298,3 @@ impl QVariant {
         }
     }
 }
-
-impl From<&QVariant> for cxx::UniquePtr<QVariant> {
-    fn from(value: &QVariant) -> cxx::UniquePtr<QVariant> {
-        QVariant::from_ref(value)
-    }
-}

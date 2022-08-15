@@ -36,7 +36,7 @@ mod ffi {
 }
 
 /// The QPoint struct defines a point in the plane using integer precision.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 #[repr(C)]
 pub struct QPoint {
     x: i32,
@@ -63,12 +63,4 @@ impl Default for QPoint {
 unsafe impl ExternType for QPoint {
     type Id = type_id!("QPoint");
     type Kind = cxx::kind::Trivial;
-}
-
-#[doc(hidden)]
-impl From<&QPoint> for QPoint {
-    // TODO: in the future remove at least the deref to a clone and potentially remove this ?
-    fn from(qpoint: &QPoint) -> Self {
-        *qpoint
-    }
 }

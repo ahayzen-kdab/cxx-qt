@@ -108,6 +108,7 @@ mod cxx_qt_ffi {
     impl<'a> From<&CppObj<'a>> for Data {
         fn from(value: &CppObj<'a>) -> Self {
             Self {
+                // TODO: once Data struct is merged we can land this change
                 primitive: value.primitive().into(),
                 opaque: value.opaque().into(),
             }

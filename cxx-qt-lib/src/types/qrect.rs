@@ -46,7 +46,7 @@ mod ffi {
 }
 
 /// The QRect struct defines a rectangle in the plane using integer precision.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 #[repr(C)]
 pub struct QRect {
     // Note that Qt stores QRect as two points rather than a point and size (which QRectF is)
@@ -76,12 +76,4 @@ impl Default for QRect {
 unsafe impl ExternType for QRect {
     type Id = type_id!("QRect");
     type Kind = cxx::kind::Trivial;
-}
-
-#[doc(hidden)]
-impl From<&QRect> for QRect {
-    // TODO: in the future remove at least the deref to a clone and potentially remove this ?
-    fn from(qrect: &QRect) -> Self {
-        *qrect
-    }
 }
