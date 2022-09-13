@@ -7,6 +7,12 @@
 
 #include "sensor.h"
 
+enum EnergyUsageRoles
+{
+  Uuid,
+  Power,
+};
+
 Sensor::Sensor(QObject* parent)
   : QObject(parent)
 {
@@ -18,14 +24,20 @@ void
 Sensor::findUuid()
 {
   if (m_model) {
-    m_index = m_model->indexOf(m_uuid);
+    for (int i = 0; i < m_model->rowCount(); i++) {
+      if (m_model->data(m_model->index(i), EnergyUsageRoles::Uuid).toString() ==
+          m_uuid) {
+        m_index = i;
+        break;
+      }
+    }
   }
 
   Q_EMIT onlineChanged();
   Q_EMIT powerChanged();
 }
 
-EnergyUsageProxyModel*
+QAbstractListModel*
 Sensor::model() const
 {
   return m_model;
@@ -42,7 +54,7 @@ Sensor::power() const
 {
   if (m_model && m_index) {
     return m_model
-      ->data(m_model->index(m_index.value()), EnergyUsageProxyModel::Power)
+      ->data(m_model->index(m_index.value()), EnergyUsageRoles::Power)
       .toDouble();
   } else {
     return 0.0;
@@ -55,13 +67,13 @@ Sensor::onModelDataChanged(const QModelIndex& topLeft,
                            const QVector<int>& roles)
 {
   if (m_index >= topLeft.row() && m_index <= bottomRight.row() &&
-      roles.contains(EnergyUsageProxyModel::Power)) {
+      roles.contains(EnergyUsageRoles::Power)) {
     Q_EMIT powerChanged();
   }
 }
 
 void
-Sensor::setModel(EnergyUsageProxyModel* model)
+Sensor::setModel(QAbstractListModel* model)
 {
   if (m_model != model) {
     if (m_model) {

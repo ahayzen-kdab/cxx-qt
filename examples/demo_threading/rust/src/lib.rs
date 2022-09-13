@@ -36,11 +36,18 @@ mod ffi {
 
     #[namespace = ""]
     unsafe extern "C++" {
+        include!("qabstractlistmodelcxx.h");
+
         include!("cxx-qt-lib/qstring.h");
         type QString = cxx_qt_lib::QString;
+        include!("cxx-qt-lib/qvariant.h");
+        type QVariant = cxx_qt_lib::QVariant;
+
+        #[cxx_name = "resetModel"]
+        fn reset_model(self: Pin<&mut EnergyUsageQt>);
     }
 
-    #[cxx_qt::qobject]
+    #[cxx_qt::qobject(base = "QAbstractListModelCXX")]
     pub struct EnergyUsage {
         /// The average power usage of the connected sensors
         #[qproperty]
@@ -103,19 +110,52 @@ mod ffi {
     }
 
     impl qobject::EnergyUsage {
+        // TODO: later we can have override as an attribute
+        #[qinvokable]
+        pub fn data(&self, index: i32, role: i32) -> QVariant {
+            let sensors = SensorsWorker::read_sensors(&self.rust().sensors_map);
+            // TODO: the order of the HashMap isn't stable ?
+            if let Some(sensor) = sensors.values().nth(index as usize) {
+                match role {
+                    0 => QVariant::from(&QString::from(
+                        &sensors.keys().nth(index as usize).unwrap().to_string(),
+                    )),
+                    1 => QVariant::from(sensor.power),
+                    _ => unreachable!(),
+                }
+            } else {
+                QVariant::default()
+            }
+        }
+
+        #[qinvokable]
+        pub fn role_name(&self, index: i32) -> QString {
+            match index {
+                0 => QString::from("uuid"),
+                1 => QString::from("power"),
+                _ => unreachable!(),
+            }
+        }
+
+        #[qinvokable]
+        pub fn role_name_count(&self) -> i32 {
+            1
+        }
+
+        #[qinvokable]
+        pub fn row_count(&self) -> i32 {
+            SensorsWorker::read_sensors(&self.rust().sensors_map).len() as i32
+        }
+
         /// A Q_INVOKABLE that returns the current power usage for a given uuid
         #[qinvokable]
         pub fn sensor_power(self: Pin<&mut Self>, uuid: &QString) -> f64 {
-            // TODO: for now we use the unsafe rust_mut() API
-            // later there will be getters and setters for the properties
-            unsafe {
-                let sensors = SensorsWorker::read_sensors(&self.rust_mut().sensors_map);
+            let sensors = SensorsWorker::read_sensors(&self.rust().sensors_map);
 
-                if let Ok(uuid) = Uuid::parse_str(&uuid.to_string()) {
-                    sensors.get(&uuid).map(|v| v.power).unwrap_or_default()
-                } else {
-                    0.0
-                }
+            if let Ok(uuid) = Uuid::parse_str(&uuid.to_string()) {
+                sensors.get(&uuid).map(|v| v.power).unwrap_or_default()
+            } else {
+                0.0
             }
         }
 

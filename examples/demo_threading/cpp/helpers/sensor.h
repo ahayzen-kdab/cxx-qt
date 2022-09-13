@@ -9,16 +9,15 @@
 
 #include <optional>
 
+#include <QAbstractListModel>
 #include <QObject>
-
-#include "energyusageproxymodel.h"
 
 class Sensor : public QObject
 {
   Q_OBJECT
 
   Q_PROPERTY(
-    EnergyUsageProxyModel* model READ model WRITE setModel NOTIFY modelChanged)
+    QAbstractListModel* model READ model WRITE setModel NOTIFY modelChanged)
   Q_PROPERTY(bool online READ online NOTIFY onlineChanged)
   Q_PROPERTY(double power READ power NOTIFY powerChanged)
   Q_PROPERTY(QString uuid READ uuid WRITE setUuid NOTIFY uuidChanged)
@@ -26,13 +25,13 @@ class Sensor : public QObject
 public:
   Sensor(QObject* parent = nullptr);
 
-  EnergyUsageProxyModel* model() const;
+  QAbstractListModel* model() const;
   bool online() const;
   double power() const;
   QString uuid() const;
 
 public Q_SLOTS:
-  void setModel(EnergyUsageProxyModel* model);
+  void setModel(QAbstractListModel* model);
   void setUuid(const QString& uuid);
 
 private Q_SLOTS:
@@ -49,6 +48,6 @@ Q_SIGNALS:
 
 private:
   std::optional<int> m_index;
-  EnergyUsageProxyModel* m_model;
+  QAbstractListModel* m_model;
   QString m_uuid;
 };

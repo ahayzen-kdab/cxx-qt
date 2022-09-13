@@ -8,7 +8,6 @@
 #include <QtQml/QQmlApplicationEngine>
 
 #include "cxx-qt-gen/energy_usage.cxxqt.h"
-#include "helpers/energyusageproxymodel.h"
 #include "helpers/sensor.h"
 
 int
@@ -31,8 +30,6 @@ main(int argc, char* argv[])
 
   qmlRegisterType<cxx_qt::energy_usage::EnergyUsage>(
     "com.kdab.energy", 1, 0, "EnergyUsage");
-  qmlRegisterType<EnergyUsageProxyModel>(
-    "com.kdab.energy", 1, 0, "EnergyUsageProxyModel");
   qmlRegisterType<Sensor>("com.kdab.energy", 1, 0, "Sensor");
 
   engine.load(url);

@@ -18,13 +18,8 @@ Window {
 
     property int currentLevel: 1
 
-    EnergyUsageProxyModel {
-        id: energyModel
-        sourceModel: energyUsage
-    }
-
     EnergyUsage {
-        id: energyUsage
+        id: energyModel
 
         // FIXME: have the ability to HandleInit so we can start the server
         // https://github.com/KDAB/cxx-qt/issues/13
@@ -351,7 +346,7 @@ Window {
 
     SideText {
         id: powerusageT
-        text: "Total used Power: <i>%1 kW</i> Average: <i>%2 kW</i>".arg((energyUsage.totalUse / 1000.0).toPrecision(3)).arg((energyUsage.averageUse / 1000.0).toPrecision(3))
+        text: "Total used Power: <i>%1 kW</i> Average: <i>%2 kW</i>".arg((energyModel.totalUse / 1000.0).toPrecision(3)).arg((energyModel.averageUse / 1000.0).toPrecision(3))
         color: "#a9deff"
         font.pixelSize: 16
         anchors.verticalCenter: wireless.verticalCenter
@@ -369,7 +364,7 @@ Window {
         y: 22
 
         SideText {
-            text: "nº Online Sensors: " + "<i><b>%1</i></b>".arg(energyUsage.sensors)
+            text: "nº Online Sensors: " + "<i><b>%1</i></b>".arg(energyModel.sensors)
             color: "#a9deff"
             font.pixelSize: 16
             anchors.verticalCenter: parent.verticalCenter

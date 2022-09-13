@@ -46,15 +46,14 @@ target_link_libraries(${CRATE} INTERFACE
 )
 
 add_executable(${APP_NAME}
-    cpp/helpers/energyusageproxymodel.h
-    cpp/helpers/energyusageproxymodel.cpp
+    cpp/helpers/qabstractlistmodelcxx.h
     cpp/main.cpp
     cpp/helpers/sensor.h
     cpp/helpers/sensor.cpp
     images/images.qrc
     qml/qml.qrc
 )
-
+target_include_directories(${APP_NAME} PRIVATE cpp/helpers)
 target_link_libraries(${APP_NAME} PRIVATE
     ${CRATE}
     Qt${QT_VERSION_MAJOR}::Test

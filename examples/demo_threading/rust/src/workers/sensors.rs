@@ -103,6 +103,8 @@ impl SensorsWorker {
                     // A Q_SIGNALS has been requested so emit it
                     qobject_energy_usage.as_mut().emit(signal);
                 }
+
+                qobject_energy_usage.reset_model();
             };
 
         loop {
