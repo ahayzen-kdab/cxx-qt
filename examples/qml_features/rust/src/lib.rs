@@ -6,8 +6,8 @@
 
 mod custom_base;
 mod empty;
+mod invokables;
 mod mock_qt_types;
-mod rust_obj_invokables;
 mod serialisation;
 mod signals;
 mod struct_properties;

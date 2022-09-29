@@ -9,5 +9,7 @@ SPDX-License-Identifier: MIT OR Apache-2.0
 <RCC version="1.0">
     <qresource prefix="/">
         <file>main.qml</file>
+        <file>pages/InvokablesPage.qml</file>
+        <file>pages/ThreadingPage.qml</file>
     </qresource>
 </RCC>

@@ -7,14 +7,14 @@
 #[cxx_qt::bridge]
 pub mod ffi {
     #[cxx_qt::qobject]
-    pub struct RustObjInvokables {
+    pub struct Invokables {
         #[qproperty]
         number: i32,
 
         rust_only_field: i32,
     }
 
-    impl Default for RustObjInvokables {
+    impl Default for Invokables {
         fn default() -> Self {
             Self {
                 number: 0,
@@ -23,7 +23,7 @@ pub mod ffi {
         }
     }
 
-    impl cxx_qt::QObject<RustObjInvokables> {
+    impl cxx_qt::QObject<Invokables> {
         // ANCHOR: book_cpp_obj
         #[qinvokable]
         pub fn invokable_mutate_cpp(self: Pin<&mut Self>) {
@@ -55,7 +55,7 @@ pub mod ffi {
         }
     }
 
-    impl RustObjInvokables {
+    impl Invokables {
         fn rust_only_method(&mut self, factor: i32) {
             self.rust_only_field *= factor;
         }
