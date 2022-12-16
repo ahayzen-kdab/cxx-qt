@@ -10,7 +10,10 @@ pub mod property;
 pub mod qobject;
 pub mod signals;
 
-use crate::syntax::attribute::{attribute_find_path, attribute_tokens_to_map, AttributeDefault};
+use crate::syntax::{
+    attribute::{attribute_find_path, attribute_tokens_to_map, AttributeDefault},
+    CxxQtItemMod,
+};
 use cxxqtdata::ParsedCxxQtData;
 use syn::{spanned::Spanned, token::Brace, Error, Ident, ItemMod, LitStr, Result};
 
@@ -29,7 +32,7 @@ pub struct Parser {
 
 impl Parser {
     /// Constructs a Parser object from a given [syn::ItemMod] block
-    pub fn from(mut module: ItemMod) -> Result<Self> {
+    pub fn from(mut module: CxxQtItemMod) -> Result<Self> {
         let mut cxx_qt_data = ParsedCxxQtData::default();
         let mut others = vec![];
         let mut cxx_file_stem = module.ident.to_string();
@@ -62,7 +65,7 @@ impl Parser {
         }
 
         // Check that there are items in the module
-        if let Some(mut items) = module.content {
+        if let Some(items) = &mut module.content {
             // Find any QObject structs
             cxx_qt_data.find_qobject_structs(&items.1)?;
 
@@ -85,7 +88,7 @@ impl Parser {
                 }
             } else {
                 // No qobjects found so pass everything through
-                others.extend(items.1);
+                others.append(&mut items.1);
             }
         }
 
@@ -94,7 +97,7 @@ impl Parser {
 
         // Return the successful Parser object
         Ok(Self {
-            passthrough_module: module,
+            passthrough_module: (*module).clone(),
             cxx_qt_data,
             cxx_file_stem,
         })

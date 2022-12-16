@@ -13,7 +13,7 @@ pub use generator::{
     rust::GeneratedRustBlocks,
 };
 pub use parser::Parser;
-pub use syntax::{parse_qt_file, CxxQtItem};
+pub use syntax::{parse_qt_file, CxxQtItem, CxxQtItemMod};
 pub use writer::{cpp::write_cpp, rust::write_rust};
 
 #[cfg(test)]

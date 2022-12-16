@@ -19,6 +19,11 @@ mod my_object {
     }
     // ANCHOR_END: book_qstring_import
 
+    extern "Qt" {
+        #[cxx_qt::qobject]
+        struct MyObject;
+    }
+
     // ANCHOR: book_rustobj_struct
     #[cxx_qt::qobject]
     pub struct MyObject {

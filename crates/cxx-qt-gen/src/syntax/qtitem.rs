@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::syntax::path::path_compare_str;
+use crate::syntax::{path::path_compare_str, qtmod::CxxQtItemMod};
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::parse::{Parse, ParseStream};
@@ -19,7 +19,7 @@ pub enum CxxQtItem {
     /// A CXX module that we need to generate code for
     Cxx(ItemMod),
     /// A CxxQt module block that we need to parse and later generate code for
-    CxxQt(ItemMod),
+    CxxQt(CxxQtItemMod),
 }
 
 impl std::fmt::Debug for CxxQtItem {

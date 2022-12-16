@@ -9,6 +9,8 @@ pub mod implitemmethod;
 pub mod path;
 mod qtfile;
 mod qtitem;
+mod qtmod;
 
 pub use qtfile::{parse_qt_file, CxxQtFile};
 pub use qtitem::CxxQtItem;
+pub use qtmod::CxxQtItemMod;

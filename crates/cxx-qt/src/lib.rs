@@ -6,7 +6,7 @@
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, ItemMod};
 
-use cxx_qt_gen::{write_rust, GeneratedRustBlocks, Parser};
+use cxx_qt_gen::{write_rust, CxxQtItemMod, GeneratedRustBlocks, Parser};
 
 /// A procedural macro which generates a QObject for a struct inside a module.
 ///
@@ -34,7 +34,7 @@ use cxx_qt_gen::{write_rust, GeneratedRustBlocks, Parser};
 pub fn bridge(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the TokenStream of a macro
     // this triggers a compile failure if the tokens fail to parse.
-    let mut module = parse_macro_input!(input as ItemMod);
+    let mut module = parse_macro_input!(input as CxxQtItemMod);
 
     // Macros do not typically need to do anything with their own attribute name,
     // so rustc does not include that in the `args` or `input` TokenStreams.
@@ -46,7 +46,7 @@ pub fn bridge(args: TokenStream, input: TokenStream) -> TokenStream {
     // add the attribute to the module before giving it to the parser.
     let args_input = format!("#[cxx_qt::bridge({})] mod dummy;", args);
     let attrs = syn::parse_str::<ItemMod>(&args_input).unwrap().attrs;
-    module.attrs = attrs.into_iter().chain(module.attrs.into_iter()).collect();
+    module.attrs = attrs.into_iter().chain(module.attrs.drain(..).into_iter()).collect();
 
     // Extract and generate the rust code
     extract_and_generate(module)
@@ -107,7 +107,7 @@ pub fn qobject(_args: TokenStream, _input: TokenStream) -> TokenStream {
 }
 
 // Take the module and C++ namespace and generate the rust code
-fn extract_and_generate(module: ItemMod) -> TokenStream {
+fn extract_and_generate(module: CxxQtItemMod) -> TokenStream {
     let parser = Parser::from(module).unwrap();
     let generated_rust = GeneratedRustBlocks::from(&parser).unwrap();
     write_rust(&generated_rust).into()
