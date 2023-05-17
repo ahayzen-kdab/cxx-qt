@@ -292,5 +292,5 @@ impl_qmap_pair!(
     crate::QVariant,
     qmap_qstring_qvariant,
     QMapPair_QString_QVariant,
-    "QMap_QString_QVariant"
+    "QVariantMap"
 );

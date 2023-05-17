@@ -84,4 +84,5 @@ qmapRemove(QMap<K, V>& m, const K& key) noexcept
 }
 }
 
-using QMap_QString_QVariant = QMap<QString, QVariant>;
+// using QMap_QString_QVariant = QVariantMap;
+// Q_DECLARE_METATYPE(QMap_QString_QVariant);

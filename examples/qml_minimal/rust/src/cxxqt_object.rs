@@ -16,6 +16,12 @@ mod my_object {
     unsafe extern "C++" {
         include!("cxx-qt-lib/qstring.h");
         type QString = cxx_qt_lib::QString;
+
+        include!("cxx-qt-lib/qmap.h");
+        type QVariantMap = cxx_qt_lib::QMap<cxx_qt_lib::QMapPair_QString_QVariant>;
+
+        include!("cxx-qt-lib/qvariant.h");
+        type QVariant = cxx_qt_lib::QVariant;
     }
     // ANCHOR_END: book_qstring_import
 
@@ -26,6 +32,8 @@ mod my_object {
         number: i32,
         #[qproperty]
         string: QString,
+        #[qproperty]
+        test: QVariantMap,
     }
     // ANCHOR_END: book_rustobj_struct
 
@@ -35,6 +43,7 @@ mod my_object {
             Self {
                 number: 0,
                 string: QString::from(""),
+                test: QVariantMap::default(),
             }
         }
     }
@@ -43,7 +52,11 @@ mod my_object {
     // ANCHOR: book_rustobj_impl
     impl qobject::MyObject {
         #[qinvokable]
-        pub fn increment_number(self: Pin<&mut Self>) {
+        pub fn increment_number(mut self: Pin<&mut Self>) {
+            let mut value = QVariantMap::default();
+            value.insert(QString::from("a"), QVariant::from(&1));
+            self.as_mut().set_test(value);
+
             let previous = *self.as_ref().number();
             self.set_number(previous + 1);
         }

@@ -25,6 +25,10 @@ Window {
         id: myObject
         number: 1
         string: "My String with my number: " + myObject.number
+
+        onTestChanged: {
+            console.warn("test: ", test, test.a)
+        }
     }
 
     Column {

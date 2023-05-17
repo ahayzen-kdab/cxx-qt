@@ -10,14 +10,14 @@ mod qmap_cxx {
     // ANCHOR: book_qmap
     unsafe extern "C++" {
         include!("cxx-qt-lib/qmap.h");
-        type QMap_QString_QVariant = cxx_qt_lib::QMap<cxx_qt_lib::QMapPair_QString_QVariant>;
+        type QVariantMap = cxx_qt_lib::QMap<cxx_qt_lib::QMapPair_QString_QVariant>;
     }
     // ANCHOR_END: book_qset
 
     extern "Rust" {
-        fn construct_qmap_qstring_qvariant() -> QMap_QString_QVariant;
-        fn read_qmap_qstring_qvariant(s: &QMap_QString_QVariant) -> bool;
-        fn clone_qmap_qstring_qvariant(s: &QMap_QString_QVariant) -> QMap_QString_QVariant;
+        fn construct_qmap_qstring_qvariant() -> QVariantMap;
+        fn read_qmap_qstring_qvariant(s: &QVariantMap) -> bool;
+        fn clone_qmap_qstring_qvariant(s: &QVariantMap) -> QVariantMap;
     }
 }
 

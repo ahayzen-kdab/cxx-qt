@@ -11,7 +11,7 @@ mod ffi {
         include!("cxx-qt-lib/qlist.h");
         type QList_i32 = cxx_qt_lib::QList<i32>;
         include!("cxx-qt-lib/qmap.h");
-        type QMap_QString_QVariant = cxx_qt_lib::QMap<cxx_qt_lib::QMapPair_QString_QVariant>;
+        type QVariantMap = cxx_qt_lib::QMap<cxx_qt_lib::QMapPair_QString_QVariant>;
         include!("cxx-qt-lib/qset.h");
         type QSet_i32 = cxx_qt_lib::QSet<i32>;
         include!("cxx-qt-lib/qstring.h");
@@ -38,7 +38,7 @@ mod ffi {
 
         hash: QHash_QString_QVariant,
         list: QList_i32,
-        map: QMap_QString_QVariant,
+        map: QVariantMap,
         set: QSet_i32,
         vector: QVector_i32,
     }
@@ -48,7 +48,7 @@ mod ffi {
         pub fn reset(mut self: Pin<&mut Self>) {
             self.as_mut().set_hash(QHash_QString_QVariant::default());
             self.as_mut().set_list(QList_i32::default());
-            self.as_mut().set_map(QMap_QString_QVariant::default());
+            self.as_mut().set_map(QVariantMap::default());
             self.as_mut().set_set(QSet_i32::default());
             self.as_mut().set_vector(QVector_i32::default());
 

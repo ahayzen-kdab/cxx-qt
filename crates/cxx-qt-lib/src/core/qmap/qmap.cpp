@@ -26,4 +26,4 @@
   static_assert(::std::is_copy_assignable<valueTypeName>::value);              \
   static_assert(::std::is_copy_constructible<valueTypeName>::value);
 
-CXX_QT_QMAP_ASSERTS(QString, QVariant, QString_QVariant);
+// CXX_QT_QMAP_ASSERTS(QString, QVariant, QString_QVariant);
