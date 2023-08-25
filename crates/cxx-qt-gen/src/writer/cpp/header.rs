@@ -131,7 +131,10 @@ pub fn write_cpp_header(generated: &GeneratedCppBlocks) -> String {
     .fold(BTreeSet::<&String>::default(), |mut acc, qobject| {
         acc.extend(qobject.blocks.includes.iter());
         acc
-    }).into_iter().cloned().collect::<Vec<String>>().join("\n"),
+    }).into_iter().chain(generated.extern_cxx_qt.iter().fold(BTreeSet::<&String>::default(), |mut acc, block| {
+        acc.extend(block.includes.iter());
+        acc
+    })).cloned().collect::<Vec<String>>().join("\n"),
     }
 }
 
