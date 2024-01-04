@@ -506,6 +506,9 @@ impl CxxQtBuilder {
             builder.flag_if_supported("/Zc:__cplusplus");
             builder.flag_if_supported("/permissive-");
             builder.flag_if_supported("/bigobj");
+            // Clang link to clang_rt as we build with -nodefaultlibs
+            // otherwise cannot use helpers from the compiler in Qt
+            builder.flag_if_supported("-fapple-link-rtlib");
             // GCC + Clang
             builder.flag_if_supported("-std=c++17");
             // MinGW requires big-obj otherwise debug builds fail
