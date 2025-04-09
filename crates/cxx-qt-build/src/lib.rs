@@ -201,6 +201,7 @@ impl GeneratedCpp {
             header
                 .write_all(header_generated.as_bytes())
                 .expect("Could not write cxx-qt header file");
+            header.sync_all().unwrap();
             cpp_file_paths.qobject_header = Some(header_path);
 
             let cpp_path = PathBuf::from(format!(
@@ -220,6 +221,7 @@ impl GeneratedCpp {
             };
             cpp.write_all(source_generated.as_bytes())
                 .expect("Could not write cxx-qt source file");
+            cpp.sync_all().unwrap();
             cpp_file_paths.qobject = Some(cpp_path);
         }
 
@@ -236,6 +238,7 @@ impl GeneratedCpp {
         header
             .write_all(&self.cxx.header)
             .expect("Could not write cxx header file");
+        header.sync_all().unwrap();
 
         let cpp_path = PathBuf::from(format!(
             "{}/{}.cxx.cpp",
@@ -249,6 +252,7 @@ impl GeneratedCpp {
         let mut cpp = File::create(&cpp_path).expect("Could not create cxx source file");
         cpp.write_all(&self.cxx.implementation)
             .expect("Could not write cxx source file");
+        cpp.sync_all().unwrap();
         cpp_file_paths.plain_cpp = cpp_path;
 
         cpp_file_paths
