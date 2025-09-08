@@ -89,7 +89,7 @@ pub fn generate(
                     #[doc(hidden)]
                     #(#thread_drop_attrs)*
                     #(#cfgs)*
-                    fn #thread_drop_name(cxx_qt_thread: &mut #cxx_qt_thread_ident);
+                    fn #thread_drop_name(cxx_qt_thread: Pin<&mut #cxx_qt_thread_ident>);
 
                     #[doc(hidden)]
                     #(#thread_is_destroyed_attrs)*
@@ -154,7 +154,7 @@ pub fn generate(
                     }
 
                     #[doc(hidden)]
-                    fn threading_drop(cxx_qt_thread: &mut #module_ident::#cxx_qt_thread_ident)
+                    fn threading_drop(cxx_qt_thread: Pin<&mut #module_ident::#cxx_qt_thread_ident>)
                     {
                         #thread_drop_qualified(cxx_qt_thread);
                     }
