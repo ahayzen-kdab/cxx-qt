@@ -11,6 +11,7 @@ members = [
     "crates/cxx-qt-lib",
     "crates/qt-build-utils",
     "crates/cxx-qt-lib-extras",
+    "crates/test-qt-types",
 
     "examples/cargo_without_cmake",
     "examples/todo_app",

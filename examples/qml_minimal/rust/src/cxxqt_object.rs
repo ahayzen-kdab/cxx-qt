@@ -15,9 +15,10 @@ pub mod qobject {
 
     // ANCHOR: book_qstring_import
     unsafe extern "C++" {
-        include!("cxx-qt-lib/qstring.h");
+        include!("test-qt-types/include/qstring.h");
         /// An alias to the QString type
-        type QString = cxx_qt_lib::QString;
+        type QString = test_qt_types::QString;
+        // type QString = cxx_qt_lib::QString;
     }
     // ANCHOR_END: book_qstring_import
 
@@ -49,7 +50,8 @@ pub mod qobject {
 
 // ANCHOR: book_use
 use core::pin::Pin;
-use cxx_qt_lib::QString;
+// use cxx_qt_lib::QString;
+use test_qt_types::QString;
 // ANCHOR_END: book_use
 
 /// The Rust struct for the QObject

@@ -1,0 +1,19 @@
+[package]
+name = "test-qt-types"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Test"
+links = "test-qt-types"
+repository.workspace = true
+rust-version.workspace = true
+
+[build-dependencies]
+cxx-build = "1.0"
+qt-build-utils = { path = "../qt-build-utils", version = "0.7.2" }
+
+[dependencies]
+cxx = "1.0"
+
+[lints]
+workspace = true
