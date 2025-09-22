@@ -27,7 +27,7 @@ fn generate_definition(qenum: &ParsedQEnum) -> String {
         .join(",\n");
 
     formatdoc! { r#"
-        enum class {enum_name} : ::std::int32_t {{
+        enum {enum_name} : ::std::int32_t {{
         {enum_values}
         }};
         "#, enum_values = enum_values.indented(2) }
@@ -62,6 +62,7 @@ pub fn generate_declaration(
                 {enum_definition}
                 Q_ENUM_NS({enum_name}) "# }
         } else {
+            // "".to_string()
             enum_definition
         },
     ))

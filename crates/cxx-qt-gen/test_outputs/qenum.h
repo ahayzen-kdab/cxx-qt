@@ -26,14 +26,14 @@ Q_NAMESPACE
 } // namespace other_namespace
 
 namespace cxx_qt::my_object {
-enum class MyEnum : ::std::int32_t
+enum MyEnum : ::std::int32_t
 {
   A
 };
 } // namespace cxx_qt::my_object
 
 namespace my_namespace {
-enum class MyOtherEnum : ::std::int32_t
+enum MyOtherEnum : ::std::int32_t
 {
   X,
   Y,
@@ -43,7 +43,7 @@ enum class MyOtherEnum : ::std::int32_t
 
 namespace cxx_qt::my_object {
 Q_NAMESPACE
-enum class MyNamespacedEnum : ::std::int32_t
+enum MyNamespacedEnum : ::std::int32_t
 {
   A,
   B,
@@ -54,7 +54,7 @@ Q_ENUM_NS(MyNamespacedEnum)
 
 namespace other_namespace {
 Q_NAMESPACE
-enum class MyOtherNamespacedEnum : ::std::int32_t
+enum MyOtherNamespacedEnum : ::std::int32_t
 {
   Variant1,
   Variant2
@@ -63,7 +63,7 @@ Q_ENUM_NS(MyOtherNamespacedEnum)
 } // namespace other_namespace
 
 namespace cxx_qt::my_object {
-enum class MyRenamedEnum : ::std::int32_t
+enum MyRenamedEnum : ::std::int32_t
 {
   A,
   B,
@@ -81,7 +81,7 @@ class MyObject
   Q_OBJECT
 public:
 #ifdef Q_MOC_RUN
-  enum class MyEnum : ::std::int32_t{ A };
+  enum MyEnum : ::std::int32_t{ A };
   Q_ENUM(MyEnum)
 #else
   using MyEnum = ::cxx_qt::my_object::MyEnum;
@@ -89,7 +89,7 @@ public:
 #endif
 
 #ifdef Q_MOC_RUN
-  enum class MyOtherEnum : ::std::int32_t{ X, Y, Z };
+  enum MyOtherEnum : ::std::int32_t{ X, Y, Z };
   Q_ENUM(MyOtherEnum)
 #else
   using MyOtherEnum = ::my_namespace::MyOtherEnum;
@@ -119,7 +119,7 @@ class CxxName
   Q_OBJECT
 public:
 #ifdef Q_MOC_RUN
-  enum class MyRenamedEnum : ::std::int32_t{ A, B, C };
+  enum MyRenamedEnum : ::std::int32_t{ A, B, C };
   Q_ENUM(MyRenamedEnum)
 #else
   using MyRenamedEnum = ::cxx_qt::my_object::MyRenamedEnum;
