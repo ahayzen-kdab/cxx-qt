@@ -49,6 +49,8 @@ use cxx_qt_gen::{
     CxxQtItem, GeneratedCppBlocks, GeneratedOpt, GeneratedRustBlocks, Parser,
 };
 
+use crate::dependencies::DependencyCXX;
+
 // TODO: we need to eventually support having multiple modules defined in a single file. This
 // is currently an issue because we are using the Rust file name to derive the cpp file name
 // and are blindly re-writing files.
@@ -1023,6 +1025,17 @@ extern "C" bool {init_fun}() {{
         // Also write the common headers first, to make sure they don't conflict with any
         // dependencies
         Self::write_common_headers();
+        let dependencies_cxx = DependencyCXX::find_all();
+        for dependency in dependencies_cxx {
+            for path in dependency.header_dirs {
+                // TODO: should probably copy so they can be reexported?
+                // but adding to the additional include dirs doesn't quite work
+                // self.additional_include_dirs.push(path);
+                self.cc_builder.include(path);
+            }
+        }
+        // TODO: have a way for cxx dependencies to be given to interface
+
         let dependencies = Dependency::find_all();
         for dependency in &dependencies {
             self.include_dependency(dependency);

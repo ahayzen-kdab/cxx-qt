@@ -7,7 +7,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use std::path::PathBuf;
+use std::{collections::BTreeMap, path::PathBuf};
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 /// This struct is used by cxx-qt-build internally to propagate data through to downstream
@@ -18,6 +18,72 @@ pub(crate) struct Manifest {
     pub(crate) qt_modules: Vec<String>,
     pub(crate) initializers: Vec<qt_build_utils::Initializer>,
     pub(crate) exported_include_prefixes: Vec<String>,
+}
+
+pub(crate) struct DependencyCXX {
+    // TODO: do we need to pass on prefix or link information too?
+    pub(crate) header_dirs: Vec<PathBuf>,
+    // TODO: do we need this for reexporting?
+    #[allow(dead_code)]
+    pub(crate) link_name: String,
+}
+
+impl DependencyCXX {
+    pub(crate) fn find_all() -> Vec<DependencyCXX> {
+        // See CXXBRIDGE_DIR env vars in the following file
+        // https://github.com/dtolnay/cxx/blob/master/gen/build/src/deps.rs
+        // and thise code has been directly copied from there
+        let mut exported_header_dirs: BTreeMap<String, Vec<(usize, PathBuf)>> = BTreeMap::new();
+
+        for (k, v) in std::env::vars_os() {
+            let mut k = k.to_string_lossy().into_owned();
+            if !k.starts_with("DEP_") {
+                continue;
+            }
+
+            if k.ends_with("_CXXBRIDGE_PREFIX") {
+                // k.truncate(k.len() - "_CXXBRIDGE_PREFIX".len());
+                // crates.entry(k).or_default().include_prefix = Some(PathBuf::from(v));
+                continue;
+            }
+
+            if k.ends_with("_CXXBRIDGE_LINKS") {
+                // k.truncate(k.len() - "_CXXBRIDGE_LINKS".len());
+                // crates.entry(k).or_default().links = Some(v);
+                continue;
+            }
+
+            let without_counter = k.trim_end_matches(|ch: char| ch.is_ascii_digit());
+            let counter_len = k.len() - without_counter.len();
+            if counter_len == 0 || !without_counter.ends_with("_CXXBRIDGE_DIR") {
+                continue;
+            }
+
+            let sort_key = k[k.len() - counter_len..]
+                .parse::<usize>()
+                .unwrap_or(usize::MAX);
+            k.truncate(k.len() - counter_len - "_CXXBRIDGE_DIR".len());
+            exported_header_dirs
+                .entry(k)
+                .or_default()
+                .push((sort_key, PathBuf::from(v)));
+        }
+
+        exported_header_dirs
+            .into_iter()
+            .map(|(link_name, mut header_dirs)| {
+                header_dirs.sort_by_key(|(sort_key, _dir)| *sort_key);
+                let header_dirs = header_dirs
+                    .into_iter()
+                    .map(|(_sort_key, dir)| dir)
+                    .collect();
+                DependencyCXX {
+                    header_dirs,
+                    link_name: link_name.clone(),
+                }
+            })
+            .collect()
+    }
 }
 
 #[derive(Clone)]
