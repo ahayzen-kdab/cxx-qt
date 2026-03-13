@@ -43,7 +43,14 @@ impl ParsedQtArtifact {
             .expect("Could not verify sha256 hash");
 
         // Extract into the target folder
-        super::extract::extract_archive(&archive_path, target_path)
+        let archive_format = if self.url.ends_with(".tar.gz") {
+            super::extract::ArchiveFormat::TarGz
+        } else if self.url.ends_with(".zip") {
+            super::extract::ArchiveFormat::Zip
+        } else {
+            panic!("Unknown archive format to decompress: {}", self.url);
+        };
+        super::extract::extract_archive(&archive_path, target_path, archive_format)
             .expect("Could not extract archive into target");
 
         target_path.to_path_buf()
