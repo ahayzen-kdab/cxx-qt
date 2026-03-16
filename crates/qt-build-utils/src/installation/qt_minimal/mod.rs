@@ -28,7 +28,9 @@ impl TryFrom<PathBuf> for QtInstallationQtMinimal {
         println!("cargo::rerun-if-changed={}", path_qt.display());
 
         // Verify that the expected folders exist
-        for folder in ["bin", "include", "lib", "libexec"] {
+        //
+        // NOTE: libexec does not exist on Windows, so is not mandatory
+        for folder in ["bin", "include", "lib"] {
             if !path_qt.join(folder).exists() {
                 return Err(anyhow::anyhow!(
                     "Failed to find {folder} in Qt path: {}",
