@@ -45,7 +45,19 @@ impl TryFrom<PathBuf> for QtInstallationQtMinimal {
                     .join(folder)
                     .join(crate::QtTool::QtPaths.binary_name())
             })
-            .find(|path| path.exists())
+            .find(|path| {
+                if path.exists() {
+                    return true;
+                }
+
+                // NOTE: try with .exe for Windows
+                let path_exe = path.with_extension("exe");
+                if path_exe.exists() {
+                    return true;
+                }
+
+                false
+            })
         else {
             return Err(anyhow::anyhow!(
                 "Failed to find qtpaths in Qt path: {}",
@@ -158,6 +170,12 @@ impl QtInstallation for QtInstallationQtMinimal {
             let path = self.path_qt.join(folder).join(tool.binary_name());
             if path.exists() {
                 return Ok(path);
+            }
+
+            // NOTE: try with .exe for Windows
+            let path_exe = path.with_extension("exe");
+            if path_exe.exists() {
+                return Ok(path_exe);
             }
         }
 
