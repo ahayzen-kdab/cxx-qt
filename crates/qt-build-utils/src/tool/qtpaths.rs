@@ -5,7 +5,7 @@
 
 use std::{path::PathBuf, process::Command};
 
-use crate::{QtInstallation, QtTool};
+use crate::{utils, QtInstallation, QtTool};
 
 /// Arguments for [QtToolQtPaths::query]
 #[derive(Default)]
@@ -46,6 +46,9 @@ impl QtToolQtPaths {
         let executable = qt_installation
             .try_find_tool(QtTool::QtPaths)
             .expect("Could not find qtpaths");
+
+        // Ensure that the executable works
+        utils::check_executable_help(&executable).unwrap();
 
         Self { executable }
     }
@@ -89,31 +92,9 @@ impl QtToolQtPaths {
 impl QtToolQtPaths {
     /// Construct from an executable path this is used interally to allow for querying for the Qt version
     pub(crate) fn from_path_buf(executable: PathBuf) -> Self {
+        // Ensure that the executable works
+        utils::check_executable_help(&executable).unwrap();
+
         Self { executable }
-            // Ensure that the command works as this is used to query the Qt version
-            // so if there are missing libraries the errors are not obvious
-            .check_command()
-    }
-
-    /// Ensure that the qtpaths command works
-    ///
-    /// As this can fail to run due to missing libraries and then cause errors
-    /// which choosing Qt versions that are non obvious.
-    fn check_command(self) -> Self {
-        let output = Command::new(&self.executable)
-            .arg("--help")
-            // Binaries should work without environment and this prevents
-            // LD_LIBRARY_PATH from causing different Qt version clashes
-            .env_clear()
-            .output()
-            .expect("Could not run qtpaths");
-        if !output.status.success() {
-            panic!(
-                "qtpaths unexpectedly exited a non-zero status code: '{:#?}'",
-                output
-            );
-        }
-
-        self
     }
 }
