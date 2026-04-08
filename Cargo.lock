@@ -1747,9 +1747,9 @@ dependencies = [
 
 [[package]]
 name = "qt-artifacts"
-version = "0.1.3"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ea43e816e97b5528fa5e355873f420a516770ca9bd561f6249dfc9b445c08d0"
+checksum = "e333559933736e88d633d3b137fbb7ced01baf542c8d8b468ca234425f0481f5"
 
 [[package]]
 name = "qt-build-utils"
