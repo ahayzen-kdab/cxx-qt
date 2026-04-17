@@ -14,7 +14,7 @@ pub(crate) struct ParsedQtManifest {
     pub(crate) artifacts: Vec<ParsedQtArtifact>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 /// Descriptor for a Qt artifact, included download information
 pub(crate) struct ParsedQtArtifact {
     pub(crate) version: Version,
