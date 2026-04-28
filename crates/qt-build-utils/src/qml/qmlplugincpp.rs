@@ -86,6 +86,13 @@ impl QmlPluginCppBuilder {
         }
         let declarations = declarations.join("\n");
         let usages = usages.join("\n");
+        // Ensure that qt_plugin_instance has a usage when building a dynamic plugin
+        // otherwise this is removed from the final dynamic library breaking plugins
+        let qt_plugin_instance_usage = if self.plugin_type == PluginType::Dynamic {
+            "volatile auto qt_plugin_instance_usage = &qt_plugin_instance;\nQ_UNUSED(qt_plugin_instance_usage);"
+        } else {
+            ""
+        };
         let init_fn_name = format!("init_cxx_qt_qml_module_{plugin_class_name}");
         write!(
             writer,
@@ -108,17 +115,19 @@ public:
     }}
 }};
 
+// The moc-generated cpp file doesn't compile on its own; it needs to be #included here.
+#include "moc_{plugin_class_name}.cpp.cpp"
+
 extern "C" {{
     // "drive-by initialization" causes the plugin class to be included in static linking scenarios
     // Any function that is called from within this file causes the entire object file to be linked in.
     // Therefore we provide an empty function that can be called at any point to ensure this file is linked in.
     bool {init_fn_name}() {{
+        {qt_plugin_instance_usage}
         return true;
     }}
 }}
 
-// The moc-generated cpp file doesn't compile on its own; it needs to be #included here.
-#include "moc_{plugin_class_name}.cpp.cpp"
 "#
         )?;
         let initializer = match self.plugin_type {
