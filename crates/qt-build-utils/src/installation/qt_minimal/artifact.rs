@@ -34,9 +34,29 @@ impl ParsedQtArtifact {
             .build()
             .expect("Http client failed to build");
         let temp_dir = tempfile::TempDir::new().expect("Could not create temporary directory");
-        let archive_path =
-            super::download::download_from_url(&self.url, &self.sha256, &temp_dir, &http_client)
-                .expect("Could not download url");
+        // let archive_path =
+        //     super::download::download_from_url(&self.url, &self.sha256, &temp_dir, &http_client)
+        //         .expect("Could not download url");
+        let archive_path = match super::download::download_from_url(
+            &self.url,
+            &self.sha256,
+            &temp_dir,
+            &http_client,
+        ) {
+            Ok(path) => path,
+            Err(err) => {
+                // Try inspecting the inner error when the download fails
+                // https://github.com/seanmonstar/reqwest/discussions/2342
+                use std::fmt::Write;
+                let mut s = format!("Could not download url: {}", err);
+                let mut src = err.source();
+                while let Some(inner) = src {
+                    let _ = write!(s, "\n\nCaused by: {}", inner);
+                    src = inner.source();
+                }
+                panic!("{}", s);
+            }
+        };
 
         // Verify the checksum
         self.verify(&super::checksum::hash_file(&archive_path).expect("Could not hash file"))
